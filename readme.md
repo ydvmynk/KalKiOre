@@ -1,4 +1,4 @@
-# 🎓 EduGuide AI — KalKiOre
+git add# 🎓 EduGuide AI — KalKiOre
 
 > **AI-Powered Career & Scholarship Guidance System for Students**
 
