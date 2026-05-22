@@ -2,38 +2,34 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const authRoutes = require('./routes/authRoutes');
 
-// 1. Load environment variables
+// 1. Configuration
 dotenv.config();
-
-// --- ADD THIS LINE FOR DEBUGGING ---
-console.log("Checking MONGO_URI:", process.env.MONGO_URI);
-
 const app = express();
 
 // 2. Middleware
-app.use(express.json()); // Allows the server to understand JSON data
-app.use(cors());         // Allows your React app to talk to this server
+app.use(express.json());
+app.use(cors());
 
-// 3. Test Route (To check if the server is alive)
+// 3. Debugging (Optional but helpful)
+console.log("Checking MONGO_URI:", process.env.MONGO_URI);
+
+// 4. API Routes
+app.use('/api/auth', authRoutes);
+
+// 5. Test Route
 app.get('/', (req, res) => {
-    res.send("API is running...");
+    res.send("EduGuide AI Backend is running...");
 });
 
-// 4. Routes
-// We will add app.use('/api/auth', ...) here later
-
-// 5. Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI;
-
-mongoose.connect(MONGO_URI)
+// 6. Database Connection & Server Start
+mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log("✅ MongoDB Connected Successfully");
-        
-        // 6. Start the Server ONLY after DB connects
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, () => {
-            console.log(`🚀 Server is running on port ${PORT}`);
+            console.log(`🚀 Server running on port ${PORT}`);
         });
     })
     .catch((err) => {

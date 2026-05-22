@@ -1,114 +1,114 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, BookOpen, Award, Map, Heart, Download } from 'lucide-react';
+import { Award, BookOpen, Target, Download, Heart, UserCircle, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const Dashboard = () => {
-  const [savedScholarships, setSavedScholarships] = useState([]);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('savedScholarships')) || [];
-    setSavedScholarships(saved);
+    const fetchDashboard = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/auth/me', {
+          headers: { 'x-auth-token': token }
+        });
+        const result = await res.json();
+        setData(result);
+      } catch (err) {
+        console.error("Dashboard error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
   }, []);
 
-  const toggleSave = (sch) => {
-    let updated;
-    if (savedScholarships.includes(sch)) {
-      updated = savedScholarships.filter(item => item !== sch);
-    } else {
-      updated = [...savedScholarships, sch];
-    }
-    setSavedScholarships(updated);
-    localStorage.setItem('savedScholarships', JSON.stringify(updated));
-  };
-
   const downloadPDF = () => {
-    const input = document.getElementById('roadmap-content');
-    html2canvas(input, { scale: 2 }).then((canvas) => {
+    const input = document.getElementById('report-area');
+    html2canvas(input).then(canvas => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save("Career_Roadmap.pdf");
+      pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+      pdf.save("My_Career_Roadmap.pdf");
     });
   };
 
-  const results = {
-    exams: ['JEE Mains', 'BITSAT', 'CUET', 'NDA'],
-    scholarships: ['Inspire Scholarship', 'HDFC Badhte Kadam', 'Reliance Foundation', 'PM Scholarship'],
-    careers: ['Software Engineer', 'Aerospace Engineer', 'Data Scientist']
-  };
+  if (loading) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-[#02040a]">
+      <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
+      <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">AI is generating your roadmap...</p>
+    </div>
+  );
+
+  // If data is still null after loading, show error instead of crashing
+  if (!data || !data.user) return <div className="text-white p-10">Error loading profile. Please try logging in again.</div>;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-10 animate-fadeIn">
-      <div className="flex justify-between items-center border-b pb-6">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900">Your AI Guidance</h1>
-          <p className="text-gray-500">Personalized recommendations based on your profile.</p>
+    <div className="animate-fadeIn max-w-6xl mx-auto pb-20">
+      <div id="report-area">
+        {/* Profile Header */}
+        <div className="glass p-10 rounded-[3rem] border-white/5 flex flex-col md:flex-row justify-between items-center mb-10 gap-8">
+          <div className="flex items-center gap-6">
+            <div className="bg-indigo-600 p-5 rounded-[2rem] text-white shadow-xl shadow-indigo-500/20">
+              <UserCircle size={40} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-white">{data.user.name}</h1>
+              <p className="text-indigo-400 font-bold text-sm uppercase tracking-widest mt-1">
+                {data.user.profile?.stream} Student • {data.user.profile?.category}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-10">
+            <div className="text-center">
+              <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Board Score</p>
+              <p className="text-3xl font-black text-white">{data.user.profile?.marks12 || data.user.profile?.marks10}%</p>
+            </div>
+            <button onClick={downloadPDF} className="bg-white text-black px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-slate-200 transition-all">
+              <Download size={18} /> Export PDF
+            </button>
+          </div>
         </div>
-        <button onClick={downloadPDF} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
-          <Download size={20} /> Download PDF Roadmap
-        </button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          {/* Exams */}
+          <section className="space-y-6">
+            <h3 className="text-xl font-bold flex items-center gap-3 text-white">
+              <Target className="text-indigo-500" /> Eligible Entrance Exams
+            </h3>
+            <div className="grid gap-4">
+              {data.eligibleExams?.length > 0 ? data.eligibleExams.map(ex => (
+                <div key={ex.name} className="glass p-6 rounded-[2rem] border-white/5 group hover:border-indigo-500/50 transition-all">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-lg font-black text-white">{ex.name}</h4>
+                    <span className="bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full text-[10px] font-black uppercase">High Match</span>
+                  </div>
+                </div>
+              )) : <p className="text-slate-500 italic">No exams matched your current score.</p>}
+            </div>
+          </section>
+
+          {/* Scholarships */}
+          <section className="space-y-6">
+            <h3 className="text-xl font-bold flex items-center gap-3 text-white">
+              <Award className="text-emerald-500" /> Matched Scholarships
+            </h3>
+            <div className="grid gap-4">
+              {data.eligibleScholarships?.length > 0 ? data.eligibleScholarships.map(sc => (
+                <div key={sc.name} className="glass p-6 rounded-[2rem] border-white/5 border-l-4 border-l-emerald-500 group">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-lg font-black text-white">{sc.name}</h4>
+                    <Heart size={18} className="text-slate-600 group-hover:text-red-500 cursor-pointer transition-colors" />
+                  </div>
+                  <p className="text-emerald-400 font-bold mt-2 text-sm italic">Verified Eligibility</p>
+                </div>
+              )) : <p className="text-slate-500 italic">No scholarships matched your profile.</p>}
+            </div>
+          </section>
+        </div>
       </div>
-
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-blue-500">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-blue-600"><BookOpen /> Eligible Exams</h2>
-          <div className="space-y-3">
-            {results.exams.map(e => <div key={e} className="p-3 bg-blue-50 rounded-lg text-blue-800 font-medium flex items-center gap-2"><CheckCircle size={16}/> {e}</div>)}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-green-500">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-green-600"><Award /> Scholarships</h2>
-          <div className="space-y-3">
-            {results.scholarships.map(s => (
-              <div key={s} className="p-3 bg-green-50 rounded-lg text-green-800 font-medium flex justify-between items-center">
-                <span>{s}</span>
-                <button onClick={() => toggleSave(s)}>
-                  <Heart size={20} fill={savedScholarships.includes(s) ? "#ef4444" : "none"} color={savedScholarships.includes(s) ? "#ef4444" : "#10b981"} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-purple-500">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-purple-600"><Map /> Career Paths</h2>
-          <div className="space-y-3">
-            {results.careers.map(c => <div key={c} className="p-3 bg-purple-50 rounded-lg text-purple-800 font-medium text-center">{c}</div>)}
-          </div>
-        </div>
-      </div>
-
-      <div id="roadmap-content" className="bg-white p-10 rounded-2xl shadow-md border border-gray-200">
-        <h2 className="text-2xl font-bold mb-8">Personalized Preparation Roadmap</h2>
-        <div className="relative border-l-4 border-blue-100 ml-4 space-y-12">
-          <div className="pl-8 relative">
-            <div className="absolute -left-[11px] top-1 w-5 h-5 bg-blue-600 rounded-full shadow"></div>
-            <h4 className="text-xl font-bold">Phase 1: Concept Building</h4>
-            <p className="text-gray-600 mt-2">Master NCERT syllabus for your core subjects. Complete 80% of theory by September.</p>
-          </div>
-          <div className="pl-8 relative">
-            <div className="absolute -left-[11px] top-1 w-5 h-5 bg-blue-600 rounded-full shadow"></div>
-            <h4 className="text-xl font-bold">Phase 2: Applications & Testing</h4>
-            <p className="text-gray-600 mt-2">Apply for all eligible scholarships. Start taking weekly mock tests for JEE/CUET.</p>
-          </div>
-        </div>
-      </div>
-
-      {savedScholarships.length > 0 && (
-        <div className="bg-white p-8 rounded-2xl shadow-md border-2 border-red-100">
-          <h2 className="text-2xl font-bold text-red-600 mb-6 flex items-center gap-2"><Heart fill="red"/> Saved Scholarships</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {savedScholarships.map(item => (
-              <div key={item} className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 font-semibold text-center">{item}</div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
