@@ -4,7 +4,7 @@ git add# 🎓 EduGuide AI — KalKiOre
 
 EduGuide AI is a full-stack web application that helps students discover their ideal career paths, eligible entrance exams, and scholarships. By combining OCR technology and Google Gemini's Generative AI, it delivers a personalized, data-driven roadmap — tailored to every student's academic background and circumstances.
 
----
+--
 
 ## 🚀 Key Features
 
@@ -184,5 +184,3 @@ This project is open source. See the repository for license details.
 **ydvmynk** — [GitHub Profile](https://github.com/ydvmynk)
 
 ---
-
-> _Empowering every student with the right guidance, at the right time._ 🌟
